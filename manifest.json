@@ -1,0 +1,9 @@
+{
+  "domain": "my_sensor",
+  "name": "My Sensor",
+  "version": "0.0.1",
+  "documentation": "https://www.example.com",
+  "requirements": [],
+  "codeowners": [],
+  "config_flow": true
+}
