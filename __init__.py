@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the integration from a config entry."""
 
     # Do global setup
-
+    #
     # Forward the setup to your platform(s)
     # In this case it will forward it to sensor.py:async_setup_entry because PLATFORMS == ["sensor"]
     # See https://developers.home-assistant.io/docs/core/entity for available entities

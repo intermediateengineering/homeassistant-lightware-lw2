@@ -1,8 +1,9 @@
 """My Sensor."""
 
 from datetime import timedelta
-from decimal import Decimal
-from random import randint
+import logging
+
+import voluptuous as vol
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -11,27 +12,44 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 
 from .const import DOMAIN
 
 # the interval in which the update function will be called
 SCAN_INTERVAL = timedelta(minutes=1)
 
+SERVICE_OFFSET_TEMP_SCHEMA = {
+    vol.Required("by"): vol.Coerce(float),
+}
+
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
-    _hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the light sensor entity from a config entry."""
+
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        name="offset_temperature",  # key in the services.yaml file
+        func=async_handle_offset_temp,
+        schema=cv.make_entity_service_schema(SERVICE_OFFSET_TEMP_SCHEMA),
+    )
+
     ip_address = entry.data["ip_address"]
     port = entry.data["port"]
-
     # Create and add our single sensor entity
-    async_add_entities(
-        [MySensor(entry.entry_id, ip_address, port)], update_before_add=True
-    )
+    sensor = MySensor(entry.entry_id, ip_address, port)
+    async_add_entities([sensor], update_before_add=True)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = sensor
 
 
 class MySensor(SensorEntity):
@@ -49,14 +67,19 @@ class MySensor(SensorEntity):
         self._entry_id = entry_id
         self._ip = ip_address
         self._port = port
+        self._offset: float = 0
         self._attr_unique_id = f"my_sensor_{self._ip}_{self._port}"
-        self._state: int | None = None
+        self._state: float | None = None
         self._attr_extra_state_attributes = {"ip": self._ip, "port": self._port}
 
     @property
     def native_value(self):
         """Native value."""
         return self._state
+
+    def offset(self, offset=0):
+        """Offset the temperature readings."""
+        self._offset = offset
 
     # Information about the devices that is partially visible in the UI.
     # The most critical thing here is to give this entity a name so it is displayed
@@ -99,4 +122,15 @@ class MySensor(SensorEntity):
         # In a real implementation, you would communicate with your device at
         # the configured IP address and port to get the light level.
         # For now, let's just simulate a random value.
-        self._state = randint(-10, 40)
+        self._state = 0 + self._offset
+
+
+async def async_handle_offset_temp(entity: MySensor, call: ServiceCall) -> None:
+    """Service Call handler to offset the temperature to the given value."""
+
+    by = call.data.get("by", 0)
+    _LOGGER.info("Offset Temperature by %s for %s", by, entity.unique_id)
+    # Update the sensor's state attribute.
+    entity.offset(by)
+    # Notify Home Assistant that the entity's state has changed.
+    entity.async_write_ha_state()
