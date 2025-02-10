@@ -1,10 +1,13 @@
 """My Sensor."""
 
+import logging
+
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, PLATFORMS
+from .coordinator import MySensorUpdateCoordinator
 
 # This will be called when we write something like this in `configuration.yaml`
 #
@@ -13,6 +16,8 @@ from .const import DOMAIN, PLATFORMS
 #     port: 123
 #   - ip_address: localhost
 #     port: 456
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -34,10 +39,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the integration from a config entry."""
 
     # Do global setup
-    #
+    ip = entry.data["ip_address"]
+    port = entry.data["port"]
+    coordinator = MySensorUpdateCoordinator(hass, ip, port)
+    await coordinator.async_config_entry_first_refresh()
+
+    hass.data.setdefault(DOMAIN, {})
+    entry.runtime_data = coordinator
     # Forward the setup to your platform(s)
     # In this case it will forward it to sensor.py:async_setup_entry because PLATFORMS == ["sensor"]
     # See https://developers.home-assistant.io/docs/core/entity for available entities
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload the sensor config entry."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

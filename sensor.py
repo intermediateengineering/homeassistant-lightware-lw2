@@ -12,18 +12,20 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
 )
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .coordinator import MySensorUpdateCoordinator
 
 # the interval in which the update function will be called
-SCAN_INTERVAL = timedelta(minutes=1)
+SCAN_INTERVAL = timedelta(seconds=10)
 
 SERVICE_OFFSET_TEMP_SCHEMA = {
     vol.Required("by"): vol.Coerce(float),
@@ -44,15 +46,13 @@ async def async_setup_entry(
         schema=cv.make_entity_service_schema(SERVICE_OFFSET_TEMP_SCHEMA),
     )
 
-    ip_address = entry.data["ip_address"]
-    port = entry.data["port"]
+    coordinator = entry.runtime_data
     # Create and add our single sensor entity
-    sensor = MySensor(entry.entry_id, ip_address, port)
+    sensor = MySensor(coordinator, entry.entry_id)
     async_add_entities([sensor], update_before_add=True)
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = sensor
 
 
-class MySensor(SensorEntity):
+class MySensor(CoordinatorEntity[MySensorUpdateCoordinator], SensorEntity):
     """Representation of a Temperature Sensor."""
 
     _attr_name = "My Sensor"
@@ -61,26 +61,38 @@ class MySensor(SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:thermometer"
     _attr_available = True
+    _attr_native_value = None
 
-    def __init__(self, entry_id: str, ip_address: str, port: int):
-        """Initialize the sensor with an IP and port."""
+    def __init__(
+        self,
+        coordinator: MySensorUpdateCoordinator,
+        entry_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
         self._entry_id = entry_id
-        self._ip = ip_address
-        self._port = port
         self._offset: float = 0
-        self._attr_unique_id = f"my_sensor_{self._ip}_{self._port}"
-        self._state: float | None = None
-        self._attr_extra_state_attributes = {"ip": self._ip, "port": self._port}
+        self._attr_unique_id = f"my_sensor_{coordinator.ip}_{coordinator.port}"
+        self._attr_extra_state_attributes = {
+            "ip": coordinator.ip,
+            "port": coordinator.port,
+        }
 
-    @property
-    def native_value(self):
-        """Native value."""
-        return self._state
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name="Dummy Temperature Sensor",
+            manufacturer="Dummy Inc.",
+            model="Test001",
+        )
+
+        self._attr_native_value = coordinator.data.temp
+        self._attr_available = coordinator.data.temp is not None
 
     def offset(self, offset=0):
         """Offset the temperature readings."""
         self._offset = offset
 
+    # Device Info
     # Information about the devices that is partially visible in the UI.
     # The most critical thing here is to give this entity a name so it is displayed
     # as a "device" in the HA UI. This name is used on the Devices overview table,
@@ -100,29 +112,15 @@ class MySensor(SensorEntity):
     # refreshed by HA from it's internal cache.
     # For more information see:
     # https://developers.home-assistant.io/docs/device_registry_index/#device-properties
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Information about this entity/device."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            name="Dummy Temperature Sensor",
-            manufacturer="Dummy Inc.",
-            model="Test001",
-        )
-
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will refelect this.
-    @property
-    def available(self) -> bool:
-        """Return True if roller and hub is available."""
-        return self.state is not None
 
-    async def async_update(self):
-        """Fetch new data for the sensor (dummy data here)."""
-        # In a real implementation, you would communicate with your device at
-        # the configured IP address and port to get the light level.
-        # For now, let's just simulate a random value.
-        self._state = 0 + self._offset
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Fetch new data for the sensor from the update coordinator."""
+        temp = self.coordinator.data.temp
+        self._attr_native_value = temp + self._offset
+        super()._handle_coordinator_update()
 
 
 async def async_handle_offset_temp(entity: MySensor, call: ServiceCall) -> None:
