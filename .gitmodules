@@ -1,0 +1,3 @@
+[submodule "lightware-lw2"]
+	path = lightware-lw2
+	url = ssh://git@gitlab.im-en.com:60422/p00308_klubhaus/lightware-lw2.git
