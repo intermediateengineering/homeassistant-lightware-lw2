@@ -1,10 +1,12 @@
 {
-  "domain": "my_sensor",
-  "name": "My Sensor",
-  "version": "0.0.1",
-  "documentation": "https://www.example.com",
-  "requirements": [],
-  "codeowners": [],
-  "integration_type": "hub",
-  "config_flow": true
+	"domain": "lightware-lw2",
+	"name": "Lightware LW2",
+	"version": "0.0.1",
+	"documentation": "https://gitlab.im-en.com/p00308_klubhaus/homeassistant-lightware-lw-2",
+	"requirements": [],
+	"codeowners": [
+		"@intermediateengineering"
+	],
+	"integration_type": "device",
+	"config_flow": true
 }

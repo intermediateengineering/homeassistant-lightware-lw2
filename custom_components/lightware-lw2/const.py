@@ -5,8 +5,8 @@ import voluptuous as vol
 from homeassistant.const import Platform
 import homeassistant.helpers.config_validation as cv
 
-DOMAIN = "my_sensor"  # has to be the same as parent directory name and match the name in manifest.json
-PLATFORMS = [Platform.SENSOR]  # delegates to each <PLATFORM>.py
+DOMAIN = "lightware-lw2"  # has to be the same as parent directory name and match the name in manifest.json
+PLATFORMS = [Platform.BINARY_SENSOR]  # delegates to each <PLATFORM>.py
 
 
 # schema for yaml configuration

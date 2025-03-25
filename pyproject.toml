@@ -8,15 +8,17 @@ version = "0.1.0"
 description = "Homeassistant Lightware LW2 Integration"
 authors = [{ name = "Intermediate Engineering GmbH", email = "info@im-en.com" }]
 license = { text = "MIT" }
-dependencies = []
+dependencies = [
+  "lw2@git+ssh://git@gitlab.im-en.com:60422/p00308_klubhaus/lightware-lw2.git",
+]
 readme = "README.md"
 requires-python = ">=3.13"
 
-[tool.uv.sources]
-lw2 = { path = "lightware-lw2", editable = true }
-
 [tool.hatch.build.targets.wheel]
 packages = ["custom_components/lightware-lw2"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.lint.isort]
 force-sort-within-sections = true
