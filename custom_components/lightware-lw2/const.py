@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 import homeassistant.helpers.config_validation as cv
 
 DOMAIN = "lightware-lw2"  # has to be the same as parent directory name and match the name in manifest.json
-PLATFORMS = [Platform.BINARY_SENSOR]  # delegates to each <PLATFORM>.py
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]  # delegates to each <PLATFORM>.py
 
 
 # schema for yaml configuration

@@ -1,6 +1,5 @@
 """My Sensor."""
 
-import logging
 from dataclasses import dataclass
 
 from homeassistant.config_entries import ConfigEntry

@@ -85,13 +85,13 @@ class PortStatusSensor(
             case Type.INPUT:
                 port: Port = next(
                     input
-                    for input in self.coordinator.data.inputs
+                    for input in self.coordinator.lw2.inputs
                     if input.idx == self.port.idx
                 )
             case Type.OUTPUT:
                 port: Port = next(
                     output
-                    for output in self.coordinator.data.outputs
+                    for output in self.coordinator.lw2.outputs
                     if output.idx == self.port.idx
                 )
         self.port = port
