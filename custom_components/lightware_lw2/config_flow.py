@@ -7,18 +7,19 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 import homeassistant.helpers.config_validation as cv
 
+from homeassistant.const import CONF_HOST, CONF_PORT
 from .const import DOMAIN
 
 SCHEMA = vol.Schema(
     {
-        vol.Required("ip_address"): cv.string,
-        vol.Required("port", default=80): cv.port,
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_PORT, default=10001): cv.port,
     }
 )
 
 
 class LightwareConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for My Sensor in the UI."""
+    """Handle a config flow in the UI."""
 
     VERSION = 1
 

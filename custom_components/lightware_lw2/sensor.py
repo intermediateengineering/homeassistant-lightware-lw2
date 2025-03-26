@@ -9,9 +9,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import LightwareConfigEntry
 from .const import DOMAIN
-from .coordinator import LightwareUpdateCoordinator
+from .coordinator import LightwareUpdateCoordinator, LightwareConfigEntry
 
 
 async def async_setup_entry(
@@ -19,7 +18,7 @@ async def async_setup_entry(
     entry: LightwareConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
-    coordinator = entry.runtime_data.coordinator
+    coordinator = entry.runtime_data
     sensors = [
         MappingSensor(coordinator, entry.entry_id, output)
         for output in coordinator.lw2.outputs

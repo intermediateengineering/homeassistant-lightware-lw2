@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import logging
-from dataclasses import dataclass
 from datetime import timedelta
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from lw2.lightware import LightwareLW2, Input, Output
-from typing import Dict, Optional
+from lw2.lightware import LightwareLW2
 
 _LOGGER = logging.getLogger(__name__)
+
+type LightwareConfigEntry = ConfigEntry[LightwareUpdateCoordinator]
 
 
 class LightwareUpdateCoordinator(DataUpdateCoordinator[None]):

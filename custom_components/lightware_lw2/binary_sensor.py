@@ -1,7 +1,6 @@
 """Video Matrix Port Sensor"""
 
 import logging
-from datetime import timedelta
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
@@ -14,13 +13,8 @@ from homeassistant.helpers.entity_platform import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from lw2.lightware import Port, Type
 
-from . import LightwareConfigEntry
 from .const import DOMAIN
-from .coordinator import LightwareUpdateCoordinator
-
-# the interval in which the update function will be called
-SCAN_INTERVAL = timedelta(seconds=10)
-
+from .coordinator import LightwareConfigEntry, LightwareUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +26,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the port binary sensor entity from a config entry."""
 
-    coordinator = entry.runtime_data.coordinator
+    coordinator = entry.runtime_data
     inputs = [
         PortStatusSensor(i, coordinator, entry.entry_id) for i in coordinator.lw2.inputs
     ]

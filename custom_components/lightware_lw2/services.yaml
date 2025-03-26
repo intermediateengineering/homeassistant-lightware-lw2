@@ -1,0 +1,29 @@
+set_routing:
+  name: "Set Routing"
+  description: "Route an input channel to an output channel on the video matrix."
+  target:
+    entity:
+      integration: lightware_lw2
+  fields:
+    input_idx:
+      name: "Input Channel"
+      description: "Which input channel to route."
+      required: true
+      selector:
+        number:
+          default: 1
+          min: 1
+          max: 32
+          mode: slider
+    output_idx:
+      name: "Output Channel"
+      description: "Which output channel to route."
+      required: true
+      selector:
+        number:
+          default: 1
+          min: 1
+          max: 32
+          mode: slider
+
+
