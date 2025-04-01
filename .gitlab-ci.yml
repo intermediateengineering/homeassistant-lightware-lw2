@@ -1,0 +1,44 @@
+
+variables:
+  UV_VERSION: 0.5
+  PYTHON_VERSION: 3.13
+  BASE_LAYER: bookworm-slim
+  # GitLab CI creates a separate mountpoint for the build directory,
+  # so we need to copy instead of using hard links.
+  UV_LINK_MODE: copy
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+
+cache:
+  - key:
+      files:
+        - uv.lock
+    paths:
+      - $UV_CACHE_DIR
+stages:
+  - lint
+  - test
+
+lint:
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  stage: lint
+  interruptible: true
+  before_script:
+    - apt update
+    - apt install -y build-essential
+  script:
+    - uv run ruff format --check
+    - uv run ruff check --output-format=gitlab > code-quality-report.json
+    - uv cache prune --ci
+  artifacts:
+    reports:
+      codequality: $CI_PROJECT_DIR/code-quality-report.json
+# test:
+#   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+#   stage: test
+#   script:
+#     - uv run pytest --junitxml=report.xml
+#     - uv cache prune --ci
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: report.xml

@@ -1,42 +1,37 @@
 [build-system]
-requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+requires = [ "hatchling" ]
 
 [project]
 name = "ha-lw2"
 version = "0.1.0"
 description = "Homeassistant Lightware LW2 Integration"
-authors = [{ name = "Intermediate Engineering GmbH", email = "info@im-en.com" }]
-license = { text = "MIT" }
-dependencies = [
-  "lw2@git+ssh://git@gitlab.im-en.com:60422/p00308_klubhaus/lightware-lw2.git",
-]
 readme = "README.md"
+license = { text = "MIT" }
+authors = [ { name = "Intermediate Engineering GmbH", email = "info@im-en.com" } ]
 requires-python = ">=3.13"
 
+classifiers = [ "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.13" ]
+dependencies = [ "lw2>=0.1" ]
+
+[dependency-groups]
+dev = [
+  "homeassistant>=2025.3",
+  "pytest>=8.3.4",
+  "pytest-asyncio>=0.25.3",
+  "ruff>=0.11.2",
+]
+
 [tool.hatch.build.targets.wheel]
-packages = ["custom_components/lightware_lw2"]
+packages = [ "custom_components/lightware_lw2" ]
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.lint.isort]
-force-sort-within-sections = true
-known-first-party = ["homeassistant"]
-combine-as-imports = true
-
 [tool.ruff]
 target-version = "py313"
 
-[tool.tox.env.lint]
-description = "Run ruff for linting"
-deps = ["ruff"]
-commands = [["ruff", "check", "."]]
-
-[tool.tox.env.fix]
-description = "Autoformat code using ruff"
-deps = ["ruff"]
-commands = [["ruff", "check", ".", "--fix"]]
-
-[dependency-groups]
-dev = ["Homeassistant>=2025.3.0", "pytest>=8.3.4", "pytest-asyncio>=0.25.3"]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

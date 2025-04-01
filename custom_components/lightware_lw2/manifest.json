@@ -2,13 +2,10 @@
 	"domain": "lightware_lw2",
 	"name": "Lightware LW2",
 	"version": "0.0.1",
-	"documentation": "https://gitlab.im-en.com/p00308_klubhaus/homeassistant-lightware-lw-2",
-	"requirements": [
-		"lw2@git+ssh://git@gitlab.im-en.com:60422/p00308_klubhaus/lightware-lw2.git"
-	],
-	"codeowners": [
-		"@intermediateengineering"
-	],
+	"documentation": "https://github.com/intermediateengineering/homeassistant-lightware-lw2",
+	"issue_tracker": "https://github.com/intermediateengineering/homeassistant-lightware-lw2",
+	"requirements": ["lw2>=0.1"],
+	"codeowners": ["@intermediateengineering"],
 	"integration_type": "device",
 	"config_flow": true
 }
