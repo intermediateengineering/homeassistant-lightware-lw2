@@ -1,16 +1,28 @@
 """Video Matrix Mapping Sensor"""
 
+from dataclasses import dataclass
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from lw2.lightware import Output
 
-from .const import DOMAIN
-from .coordinator import LightwareUpdateCoordinator, LightwareConfigEntry
+from .coordinator import LightwareConfigEntry
+from .entity import LightwareEntity
+
+# Coordinator is used to centralize the data updates
+PARALLEL_UPDATES = 0
+
+
+@dataclass(kw_only=True, frozen=True)
+class MappingSensorEntityDescription(SensorEntityDescription):
+    """Description for Lightware Mapping sensor entities."""
+
+    output: Output
 
 
 async def async_setup_entry(
@@ -19,41 +31,36 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     coordinator = entry.runtime_data
-    sensors = [
-        MappingSensor(coordinator, entry.entry_id, output)
+    options = [str(input.idx) for input in coordinator.lw2.inputs]
+
+    entity_descriptions = [
+        MappingSensorEntityDescription(
+            key=f"mapping_{output.idx:02}",
+            name=f"Connection Output {output.idx:02}",
+            device_class=SensorDeviceClass.ENUM,
+            options=options,
+            output=output,
+            icon="mdi:connection",
+            state_class=None,
+        )
         for output in coordinator.lw2.outputs
+    ]
+
+    sensors = [
+        MappingSensor(coordinator, entity_description)
+        for entity_description in entity_descriptions
     ]
 
     async_add_entities(sensors, update_before_add=True)
 
 
-class MappingSensor(CoordinatorEntity[LightwareUpdateCoordinator], SensorEntity):
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_icon = "mdi:connection"
-    _attr_state_class = None
-
-    def __init__(self, coordinator, entry_id, output):
-        super().__init__(coordinator)
-        self._entry_id = entry_id
-        self.output = output
-        self._attr_options = [input.idx for input in coordinator.lw2.inputs]
-        self._attr_unique_id = (
-            f"lightware_mapping{output.idx:02}_{coordinator.lw2.serial}"
-        )
-        self._attr_name = f"Mapping Output {output.idx:02}"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            name="Lightware Video Matrix",
-            manufacturer="Lightware",
-            model=coordinator.lw2.product_type,
-            sw_version=coordinator.lw2.firmware,
-        )
+class MappingSensor(LightwareEntity[MappingSensorEntityDescription], SensorEntity):
+    """The mapping of the input port index to the corresponding output port index"""
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        input = self.coordinator.lw2.mapping[self.output]
-        self._attr_native_value = getattr(input, "idx", None)
-        self.input = input
+        input = self.coordinator.lw2.mapping[self.entity_description.output]
+        self._attr_native_value = str(getattr(input, "idx", None))
         self.async_write_ha_state()
+        super()._handle_coordinator_update()

@@ -3,16 +3,14 @@ from __future__ import annotations
 import logging
 
 import voluptuous as vol
+from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
-
 from homeassistant.helpers import device_registry as dr
-
-from homeassistant.const import CONF_DEVICE_ID
 from lw2.commands import InputToOutput
 
+from .const import CONF_INPUT_IDX, CONF_OUTPUT_IDX, DOMAIN, SERVICE_SET_ROUTING
 from .coordinator import LightwareConfigEntry
-from .const import DOMAIN, CONF_INPUT_IDX, CONF_OUTPUT_IDX, SERVICE_SET_ROUTING
 
 SET_ROUTING_SCHEMA = vol.Schema(
     {
@@ -49,6 +47,7 @@ def setup_services(hass: HomeAssistant) -> None:
 
             coordinator = config_entry.runtime_data
             await coordinator.lw2.send_command(InputToOutput(input_idx, output_idx))
+            await coordinator.async_request_refresh()
 
     hass.services.async_register(
         DOMAIN,

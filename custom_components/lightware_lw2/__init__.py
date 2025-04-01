@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.typing import ConfigType
 
-from .services import setup_services
 from .const import PLATFORMS
 from .coordinator import LightwareUpdateCoordinator
+from .services import setup_services
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -28,6 +29,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = entry.data[CONF_PORT]
     coordinator = LightwareUpdateCoordinator(hass, ip, port)
     await coordinator.async_config_entry_first_refresh()
+
+    if not coordinator.available:
+        raise ConfigEntryNotReady(f"Lightware device {ip}:{port} is not available.")
 
     entry.runtime_data = coordinator
 

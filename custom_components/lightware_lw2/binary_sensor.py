@@ -1,22 +1,27 @@
 """Video Matrix Port Sensor"""
 
-import logging
+from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import (
-    AddEntitiesCallback,
-)
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from lw2.lightware import Port, Type
 
-from .const import DOMAIN
-from .coordinator import LightwareConfigEntry, LightwareUpdateCoordinator
+from .coordinator import LightwareConfigEntry
+from .entity import LightwareEntity
 
-_LOGGER = logging.getLogger(__name__)
+# Coordinator is used to centralize the data updates
+PARALLEL_UPDATES = 0
+
+
+@dataclass(kw_only=True, frozen=True)
+class PortSensorEntityDescription(BinarySensorEntityDescription):
+    """Description for Lightware Mapping sensor entities."""
+
+    port: Port
 
 
 async def async_setup_entry(
@@ -27,67 +32,43 @@ async def async_setup_entry(
     """Set up the port binary sensor entity from a config entry."""
 
     coordinator = entry.runtime_data
-    inputs = [
-        PortStatusSensor(i, coordinator, entry.entry_id) for i in coordinator.lw2.inputs
+    entity_descriptions = [
+        PortSensorEntityDescription(
+            key=f"{port.type.name}_{port.idx:02}",
+            name=f"{port.type.name.capitalize()} {port.idx:02}",
+            port=port,
+            icon="mdi:hdmi-port",
+        )
+        for port in coordinator.lw2.inputs + coordinator.lw2.outputs
     ]
-    outputs = [
-        PortStatusSensor(o, coordinator, entry.entry_id)
-        for o in coordinator.lw2.outputs
+
+    sensors = [
+        PortStatusSensor(coordinator, entity_description)
+        for entity_description in entity_descriptions
     ]
-    async_add_entities(inputs + outputs, update_before_add=True)
+    async_add_entities(sensors, update_before_add=True)
 
 
 class PortStatusSensor(
-    CoordinatorEntity[LightwareUpdateCoordinator], BinarySensorEntity
+    LightwareEntity[PortSensorEntityDescription], BinarySensorEntity
 ):
     """The port status of the video matrix if a cable is connected"""
-
-    _attr_icon = "mdi:hdmi-port"
-    _attr_is_on = False
-
-    def __init__(
-        self,
-        port: Port,
-        coordinator: LightwareUpdateCoordinator,
-        entry_id: str,
-    ):
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._entry_id = entry_id
-        self._attr_unique_id = (
-            f"lightware_{port.type.name}{port.idx:02}_{coordinator.lw2.serial}"
-        )
-        self._attr_extra_state_attributes = {"type": port.type, "index": port.idx}
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._entry_id)},
-            name="Lightware Video Matrix",
-            manufacturer="Lightware",
-            model=coordinator.lw2.product_type,
-            sw_version=coordinator.lw2.firmware,
-        )
-
-        _LOGGER.info("Added %s", self._attr_unique_id)
-
-        self._attr_name = f"{port.type.name} {port.idx:02}"
-        self.port = port
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Fetch new data for the sensor from the update coordinator."""
-        match self.port.type:
+        match self.entity_description.port.type:
             case Type.INPUT:
                 port: Port = next(
                     input
                     for input in self.coordinator.lw2.inputs
-                    if input.idx == self.port.idx
+                    if input.idx == self.entity_description.port.idx
                 )
             case Type.OUTPUT:
                 port: Port = next(
                     output
                     for output in self.coordinator.lw2.outputs
-                    if output.idx == self.port.idx
+                    if output.idx == self.entity_description.port.idx
                 )
-        self.port = port
         self._attr_is_on = port.connected
         super()._handle_coordinator_update()
