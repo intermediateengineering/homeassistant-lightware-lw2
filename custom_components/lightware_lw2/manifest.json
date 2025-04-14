@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"documentation": "https://github.com/intermediateengineering/homeassistant-lightware-lw2",
 	"issue_tracker": "https://github.com/intermediateengineering/homeassistant-lightware-lw2",
-	"requirements": ["lw2>=0.1"],
+	"requirements": ["lw2==0.1.0"],
 	"codeowners": ["@intermediateengineering"],
 	"integration_type": "device",
 	"config_flow": true
