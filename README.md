@@ -44,7 +44,7 @@ It is possible to show the info and debug logs for the Pi-hole V6 integration, t
 logger:
   default: warning
   logs:
-    # Log for Pi-hole V6 integation
+    # Log setting for integration
     custom_components.lightware_lw2: debug
 ```
 
